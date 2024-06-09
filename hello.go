@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -46,21 +47,19 @@ func main() {
 		}
 	}()
 
-	// type commandStruct struct {
-	// 	Type        string   `json:"type"`
-	// 	Product_IDs []string `json:"product_ids"`
-	// 	Channels    []string `json:"channels"`
-	// }
-	// command := &commandStruct{
-	// 	Type:        "subscribe",
-	// 	Product_IDs: []string{"BTC-USD"},
-	// 	Channels:    []string{"level2_batch"},
-	// }
+	type commandStruct struct {
+		Type        string   `json:"type"`
+		Product_IDs []string `json:"product_ids"`
+		Channels    []string `json:"channels"`
+	}
+	command := &commandStruct{
+		Type:        "subscribe",
+		Product_IDs: []string{"BTC-USD"},
+		Channels:    []string{"level2_batch"},
+	}
 
-	// json, _ := json.Marshal(command)
-	// log.Print(json)
-
-	str := `{"type": "subscribe","product_ids": ["BTC-USD"],"channels": ["level2_batch"]}`
+	json, _ := json.Marshal(command)
+	str := string(json)
 
 	fmt.Println(str)
 	connectionErr := c.WriteMessage(1, []byte(str))
