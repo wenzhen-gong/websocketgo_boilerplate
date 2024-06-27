@@ -2,8 +2,10 @@ package exchange
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"wz/entity"
+	"wz/utilities"
 
 	"github.com/gorilla/websocket"
 )
@@ -26,26 +28,38 @@ func (exchange *Exchange) Connect() {
 	// exchange.Connection = c
 	defer c.Close()
 	// send subscription message
-	json, _ := json.Marshal(exchange.subMsg)
-	str := []byte(json)
+	subMsg, _ := json.Marshal(exchange.subMsg)
+	subMsgStr := []byte(subMsg)
 
-	if connectionErr := c.WriteMessage(1, str); connectionErr != nil {
+	if connectionErr := c.WriteMessage(1, subMsgStr); connectionErr != nil {
 		log.Println("Failed to send subcription message: ", connectionErr)
 	}
 
 	// listening for messages sent from ws server
 	for {
-		mt, message, err := c.ReadMessage()
+		_, message, err := c.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
+			log.Println("Failed to read message:", err)
+		}
+
+		var receivedMsg map[string]interface{}
+
+		if err := json.Unmarshal([]byte(message), &receivedMsg); err != nil {
+			panic(err)
 		}
 		// structure data and send to channel
+		if utilities.ValidateKraken(receivedMsg) {
+			fmt.Println("success")
+		}
 
-		log.Printf("recv: %s, type: %s", message, websocket.FormatMessageType(mt))
 	}
 
 }
 
 func New(exchange string, address string, subMsg map[string]interface{}) *Exchange {
 	return &Exchange{exchange, address, &map[string]entity.Orderbook{}, subMsg, nil}
+}
+
+func (exchange *Exchange) StuctureData() {
+
 }

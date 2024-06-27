@@ -12,3 +12,11 @@ type PrizeSize struct {
 	price float32
 	size  float32
 }
+
+var TickerMap = map[string]string{"BTC/USDT": "btcusdt", "ETH/USDT": "ethusdt"}
+
+type OrderBookMsg struct {
+	exchange  string
+	ticker    string
+	orderbook Orderbook
+}
