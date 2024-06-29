@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// should serve as a template for other exchanges, other parse functions need to return the same data format
 func ParseKrakenData(receivedMsg map[string]interface{}, maxDepth int) (string, string, entity.Orderbook) {
 	var msg krakenMsg
 
@@ -22,7 +23,7 @@ func ParseKrakenData(receivedMsg map[string]interface{}, maxDepth int) (string, 
 
 		switch msg.Type {
 		case "snapshot":
-
+			// return the trimed Bids and Asks
 			return "snapshot", entity.TickerMap[msg.Data[0].Symbol], entity.Orderbook{Bids: msg.Data[0].Bids[:int(math.Min(float64(len(msg.Data[0].Bids)), float64(maxDepth)))], Asks: msg.Data[0].Asks[:int(math.Min(float64(len(msg.Data[0].Asks)), float64(maxDepth)))], Ts_original: time.Now().UTC(), Ts_received: time.Now().UTC(), Ts_updated: time.Time{}}
 		case "update":
 

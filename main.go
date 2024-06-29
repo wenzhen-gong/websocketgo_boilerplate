@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"wz/entity"
 	"wz/exchange"
 	"wz/kraken"
 )
@@ -15,6 +16,8 @@ func main() {
 	log.SetFlags(0)
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
+
+	// msgChan := make(chan entity.OrderBookMsg)
 
 	go Kraken()
 
@@ -55,4 +58,8 @@ func Kraken() {
 	defer e.Connection.Close()
 	e.SendSubMsg()
 	e.ReceiveMsg(kraken.ParseKrakenData)
+}
+
+func aggregator(ch chan entity.OrderBookMsg) {
+
 }
