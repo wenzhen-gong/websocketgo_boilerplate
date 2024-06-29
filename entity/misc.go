@@ -1,22 +1,24 @@
 package entity
 
+import "time"
+
 type Orderbook struct {
-	bids        []PrizeSize
-	asks        []PrizeSize
-	ts_original int
-	ts_received int
-	ts_updated  int
+	Bids        []PriceSize
+	Asks        []PriceSize
+	Ts_original time.Time
+	Ts_received time.Time
+	Ts_updated  time.Time
 }
 
-type PrizeSize struct {
-	price float32
-	size  float32
+type PriceSize struct {
+	Price float32
+	Size  float32 `mapstructure:"qty"`
 }
 
 var TickerMap = map[string]string{"BTC/USDT": "btcusdt", "ETH/USDT": "ethusdt"}
 
 type OrderBookMsg struct {
-	exchange  string
-	ticker    string
-	orderbook Orderbook
+	Exchange  string
+	Ticker    string
+	Orderbook Orderbook
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"wz/exchange"
+	"wz/kraken"
 )
 
 func main() {
@@ -51,4 +52,7 @@ func Kraken() {
 
 	e := exchange.New("kraken", "wss://ws.kraken.com/v2", sub)
 	e.Connect()
+	defer e.Connection.Close()
+	e.SendSubMsg()
+	e.ReceiveMsg(kraken.ParseKrakenData)
 }
