@@ -20,6 +20,8 @@ type PriceSize struct {
 
 var TickerMap = map[string]string{"BTC/USDT": "btcusdt", "ETH/USDT": "ethusdt"}
 
+var ChannelMap = map[string]chan OrderBookMsg{"btcusdt": make(chan OrderBookMsg), "ethusdt": make(chan OrderBookMsg)}
+
 type OrderBookMsg struct {
 	Exchange  string
 	Ticker    string

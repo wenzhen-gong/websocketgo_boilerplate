@@ -16,11 +16,11 @@ type Exchange struct {
 	orderBooks map[string]*entity.Orderbook
 	maxDepth   int
 	subMsg     map[string]interface{}
+	channelMap map[string]chan entity.OrderBookMsg
 	Connection *websocket.Conn
 }
 
 func (exchange *Exchange) Connect() {
-
 	// Create ws connection
 	c, _, err := websocket.DefaultDialer.Dial(exchange.address, nil)
 	if err != nil {
@@ -58,11 +58,10 @@ func (exchange *Exchange) Connect() {
 }
 
 func New(exchange string, address string, subMsg map[string]interface{}) *Exchange {
-	return &Exchange{exchange, address, map[string]*entity.Orderbook{}, 2000, subMsg, nil}
+	return &Exchange{exchange, address, map[string]*entity.Orderbook{}, 2000, subMsg, entity.ChannelMap, nil}
 }
 
 func (exchange *Exchange) SendSubMsg() {
-	// fmt.Println(exchange)
 
 	subMsg, _ := json.Marshal(exchange.subMsg)
 	subMsgStr := []byte(subMsg)
@@ -72,7 +71,7 @@ func (exchange *Exchange) SendSubMsg() {
 	}
 }
 
-func (exchange *Exchange) ReceiveMsg(parseData func(map[string]interface{}, int) (string, string, entity.Orderbook)) {
+func (exchange *Exchange) ReceiveMsg(parseData func(map[string]interface{}, int) (string, string, entity.Orderbook), channelMap map[string]chan entity.OrderBookMsg) {
 	for {
 		_, message, err := exchange.Connection.ReadMessage()
 		if err != nil {
@@ -84,10 +83,10 @@ func (exchange *Exchange) ReceiveMsg(parseData func(map[string]interface{}, int)
 			panic(err)
 		}
 
-		// Parse Go map into entity.Orderbook
-		messageType, ticker, orderBook := parseData(receivedMsg, exchange.maxDepth)
-		// set exchange.OrderBooks based on snapshot or update messageType
-		exchange.UpdateOrderBooks(messageType, ticker, orderBook)
+		// Parse Go map into entity.Orderbook and set exchange.OrderBooks based on snapshot or update messageType
+
+		exchange.UpdateOrderBooks(parseData(receivedMsg, exchange.maxDepth))
+
 		// fmt.Println("new message: ", messageType, ticker, orderBook)
 		// fmt.Println("updated orderBooks: ", exchange.orderBooks["btcusdt"], exchange.orderBooks["ethusdt"])
 	}
@@ -97,7 +96,10 @@ func (exchange *Exchange) UpdateOrderBooks(messageType string, ticker string, or
 	if messageType == "snapshot" {
 		orderBook.Ts_updated = time.Now().UTC()
 		exchange.orderBooks[ticker] = &orderBook
+
 		// send ordeBbook to aggregator channel
+		exchange.channelMap[ticker] <- entity.OrderBookMsg{Exchange: exchange.exchange, Ticker: ticker, Orderbook: *exchange.orderBooks[ticker]}
+
 	} else if messageType == "update" {
 		// insert update Bids and Asks into orderBooks, trim to maxDepth
 		if exchange.orderBooks[ticker] != nil {
@@ -113,6 +115,8 @@ func (exchange *Exchange) UpdateOrderBooks(messageType string, ticker string, or
 			exchange.orderBooks[ticker].Ts_updated = time.Now().UTC()
 
 			// send exchange.orderBooks[ticker] to aggregator channel
+			exchange.channelMap[ticker] <- entity.OrderBookMsg{Exchange: exchange.exchange, Ticker: ticker, Orderbook: *exchange.orderBooks[ticker]}
+
 		}
 	}
 }

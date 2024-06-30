@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -17,38 +18,25 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	// msgChan := make(chan entity.OrderBookMsg)
+	// // get all possible tickers
+	// v := []string{}
+	// for _, value := range entity.TickerMap {
+	// 	v = append(v, value)
+	// }
+	// slices.Sort(v)
+	// slices.Compact(v)
 
-	go Kraken()
+	go Kraken(entity.ChannelMap)
+	go aggregator_btcusdt(entity.ChannelMap["btcusdt"])
+	go aggregator_ethusdt(entity.ChannelMap["ethusdt"])
 
 	<-interrupt
 	log.Println("User interruption")
 	return
 
-	// for {
-	// 	select {
-	// 	// case <-done:
-	// 	// 	return
-	// 	case <-interrupt:
-	// 		log.Println("interrupt")
-
-	// 		// Cleanly close the connection by sending a close message and then
-	// 		// waiting (with timeout) for the server to close the connection.
-	// 		err := e.Connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-	// 		if err != nil {
-	// 			log.Println("write close:", err)
-	// 			return
-	// 		}
-	// 		// select {
-	// 		// case <-done:
-	// 		// case <-time.After(time.Second):
-	// 		// }
-	// 		return
-	// 	}
-	// }
 }
 
-func Kraken() {
+func Kraken(channelMap map[string]chan entity.OrderBookMsg) {
 	sub := map[string]interface{}{"method": "subscribe", "params": map[string]interface{}{"channel": "book",
 		"symbol": []string{"BTC/USDT", "ETH/USDT"},
 		"depth":  1000}}
@@ -57,9 +45,17 @@ func Kraken() {
 	e.Connect()
 	defer e.Connection.Close()
 	e.SendSubMsg()
-	e.ReceiveMsg(kraken.ParseKrakenData)
+	e.ReceiveMsg(kraken.ParseKrakenData, channelMap)
 }
 
-func aggregator(ch chan entity.OrderBookMsg) {
+func aggregator_btcusdt(ch <-chan entity.OrderBookMsg) {
+	for {
+		fmt.Println("aggregator btcusdt received: ", <-ch)
+	}
+}
 
+func aggregator_ethusdt(ch <-chan entity.OrderBookMsg) {
+	for {
+		fmt.Println("aggregator ethusdt received: ", <-ch)
+	}
 }
