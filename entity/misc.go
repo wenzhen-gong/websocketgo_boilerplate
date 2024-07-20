@@ -13,41 +13,51 @@ type Orderbook struct {
 	Ts_updated  time.Time
 }
 
-type PriceSize struct {
-	Price float32
-	Size  float32 `mapstructure:"qty"`
-}
-
-var TickerMap = map[string]string{"BTC/USDT": "btcusdt", "ETH/USDT": "ethusdt"}
-
-var ChannelMap = map[string]chan OrderBookMsg{"btcusdt": make(chan OrderBookMsg), "ethusdt": make(chan OrderBookMsg)}
-
 type OrderBookMsg struct {
 	Exchange  string
 	Ticker    string
 	Orderbook Orderbook
 }
+type PriceSize struct {
+	Price float32
+	Size  float32 `mapstructure:"qty"`
+}
 
-// func UpdateOrderBooks(messageType string, ticker string, orderBook Orderbook, orderBooks map[string]*Orderbook, maxDepth int) {
-// 	if messageType == "snapshot" {
-// 		orderBook.Ts_updated = time.Now().UTC()
-// 		orderBooks[ticker] = &orderBook
-// 	} else if messageType == "update" {
-// 		// insert update Bids and Asks into orderBooks, trim to maxDepth
-// 		if orderBooks[ticker] != nil {
+type PSheap [][]PriceSize
 
-// 			insertBids(&orderBooks[ticker].Bids, orderBook.Bids)
-// 			orderBooks[ticker].Bids = orderBooks[ticker].Bids[:int(math.Min(float64(len(orderBooks[ticker].Bids)), float64(maxDepth)))]
-// 			insertAsks(&orderBooks[ticker].Asks, orderBook.Asks)
-// 			orderBooks[ticker].Asks = orderBooks[ticker].Asks[:int(math.Min(float64(len(orderBooks[ticker].Asks)), float64(maxDepth)))]
+func (h PSheap) Len() int { return len(h) }
 
-// 			// update orderBooks's Ts_original, Ts_received, Ts_updated from update message and current time respectively
-// 			orderBooks[ticker].Ts_original = orderBook.Ts_original
-// 			orderBooks[ticker].Ts_received = orderBook.Ts_received
-// 			orderBooks[ticker].Ts_updated = time.Now().UTC()
-// 		}
-// 	}
-// }
+func (h PSheap) Less(i, j int) bool {
+	if len(h[j]) == 0 {
+		return true
+	} else if len(h[i]) == 0 {
+		return false
+	} else if h[i][0].Price > h[j][0].Price {
+		return true
+	} else {
+		return false
+	}
+
+}
+func (h PSheap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+
+func (h *PSheap) Push(x interface{}) {
+	*h = append(*h, x.([]PriceSize))
+}
+
+func (h *PSheap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
+var TickerMap = map[string]string{"BTC/USDT": "btcusdt", "ETH/USDT": "ethusdt"}
+
+var CentralizedOrderBooks = map[string]map[string]Orderbook{}
+
+var ChannelMap = map[string]chan OrderBookMsg{"btcusdt": make(chan OrderBookMsg), "ethusdt": make(chan OrderBookMsg)}
 
 func InsertBids(existing *[]PriceSize, update []PriceSize) {
 

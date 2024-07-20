@@ -84,11 +84,8 @@ func (exchange *Exchange) ReceiveMsg(parseData func(map[string]interface{}, int)
 		}
 
 		// Parse Go map into entity.Orderbook and set exchange.OrderBooks based on snapshot or update messageType
-
 		exchange.UpdateOrderBooks(parseData(receivedMsg, exchange.maxDepth))
 
-		// fmt.Println("new message: ", messageType, ticker, orderBook)
-		// fmt.Println("updated orderBooks: ", exchange.orderBooks["btcusdt"], exchange.orderBooks["ethusdt"])
 	}
 }
 
@@ -116,58 +113,6 @@ func (exchange *Exchange) UpdateOrderBooks(messageType string, ticker string, or
 
 			// send exchange.orderBooks[ticker] to aggregator channel
 			exchange.channelMap[ticker] <- entity.OrderBookMsg{Exchange: exchange.exchange, Ticker: ticker, Orderbook: *exchange.orderBooks[ticker]}
-
 		}
 	}
 }
-
-// func insertBids(existing *[]entity.PriceSize, update []entity.PriceSize) {
-
-// 	for _, elem := range update {
-// 		idx := sort.Search(len(*existing), func(i int) bool {
-// 			return (*existing)[i].Price <= elem.Price
-// 		})
-// 		if idx == len(*existing) {
-// 			if elem.Size != 0 {
-// 				*existing = append((*existing), elem)
-// 			}
-// 		} else {
-
-// 			if (*existing)[idx].Price == elem.Price {
-// 				if elem.Size != 0 {
-// 					*existing = append((*existing)[:idx], append([]entity.PriceSize{elem}, (*existing)[idx+1:]...)...)
-// 				} else {
-// 					*existing = append((*existing)[:idx], (*existing)[idx+1:]...)
-// 				}
-// 			} else if (*existing)[idx].Price < elem.Price {
-// 				*existing = append((*existing)[:idx], append([]entity.PriceSize{elem}, (*existing)[idx:]...)...)
-// 			}
-// 		}
-
-// 	}
-// }
-
-// func insertAsks(existing *[]entity.PriceSize, update []entity.PriceSize) {
-
-// 	for _, elem := range update {
-// 		idx := sort.Search(len(*existing), func(i int) bool {
-// 			return (*existing)[i].Price >= elem.Price
-// 		})
-// 		if idx == len(*existing) {
-// 			if elem.Size != 0 {
-// 				*existing = append((*existing), elem)
-// 			}
-// 		} else {
-
-// 			if (*existing)[idx].Price == elem.Price {
-// 				if elem.Size != 0 {
-// 					*existing = append((*existing)[:idx], append([]entity.PriceSize{elem}, (*existing)[idx+1:]...)...)
-// 				} else {
-// 					*existing = append((*existing)[:idx], (*existing)[idx+1:]...)
-// 				}
-// 			} else if (*existing)[idx].Price > elem.Price {
-// 				*existing = append((*existing)[:idx], append([]entity.PriceSize{elem}, (*existing)[idx:]...)...)
-// 			}
-// 		}
-// 	}
-// }
