@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"container/heap"
 	"sort"
 	"time"
 )
@@ -21,36 +22,6 @@ type OrderBookMsg struct {
 type PriceSize struct {
 	Price float32
 	Size  float32 `mapstructure:"qty"`
-}
-
-type PSheap [][]PriceSize
-
-func (h PSheap) Len() int { return len(h) }
-
-func (h PSheap) Less(i, j int) bool {
-	if len(h[j]) == 0 {
-		return true
-	} else if len(h[i]) == 0 {
-		return false
-	} else if h[i][0].Price > h[j][0].Price {
-		return true
-	} else {
-		return false
-	}
-
-}
-func (h PSheap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
-
-func (h *PSheap) Push(x interface{}) {
-	*h = append(*h, x.([]PriceSize))
-}
-
-func (h *PSheap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
 }
 
 var TickerMap = map[string]string{"BTC/USDT": "btcusdt", "ETH/USDT": "ethusdt"}
@@ -108,4 +79,91 @@ func InsertAsks(existing *[]PriceSize, update []PriceSize) {
 			}
 		}
 	}
+}
+
+type BidsHeap struct {
+	Data [][]PriceSize
+}
+type AsksHeap struct {
+	Data [][]PriceSize
+}
+
+type teststruct struct {
+	member1 int
+	member2 int
+}
+
+func (h BidsHeap) Len() int { return len(h.Data) }
+func (h AsksHeap) Len() int { return len(h.Data) }
+
+func (h BidsHeap) Less(i, j int) bool {
+	if len(h.Data[j]) == 0 {
+		return true
+	} else if len(h.Data[i]) == 0 {
+		return false
+	} else if h.Data[i][0].Price > h.Data[j][0].Price {
+		return true
+	} else {
+		return false
+	}
+}
+func (h AsksHeap) Less(i, j int) bool {
+	if len(h.Data[j]) == 0 {
+		return false
+	} else if len(h.Data[i]) == 0 {
+		return true
+	} else if h.Data[i][0].Price < h.Data[j][0].Price {
+		return true
+	} else {
+		return false
+	}
+}
+func (h BidsHeap) Swap(i, j int) {
+	h.Data[i], h.Data[j] = h.Data[j], h.Data[i]
+}
+func (h AsksHeap) Swap(i, j int) {
+	h.Data[i], h.Data[j] = h.Data[j], h.Data[i]
+}
+
+func (h *BidsHeap) Push(x interface{}) {
+	(*h).Data = append((*h).Data, x.([]PriceSize))
+}
+func (h *AsksHeap) Push(x interface{}) {
+	(*h).Data = append((*h).Data, x.([]PriceSize))
+}
+
+func (h *BidsHeap) Pop() interface{} {
+	old := (*h).Data
+	n := len(old)
+	x := old[n-1]
+	(*h).Data = old[0 : n-1]
+	return x
+}
+func (h *AsksHeap) Pop() interface{} {
+	old := (*h).Data
+	n := len(old)
+	x := old[n-1]
+	(*h).Data = old[0 : n-1]
+	return x
+}
+
+func Aggregate(slice heap.Interface) []PriceSize {
+
+	heap.Init(slice)
+	aggregated := []PriceSize{}
+	for slice.Len() != 0 {
+		curr := heap.Pop(slice).([]PriceSize)
+
+		if len(curr) == 0 {
+			continue
+		}
+		heap.Push(slice, curr[1:])
+
+		if len(aggregated) != 0 && aggregated[len(aggregated)-1].Price == curr[0].Price {
+			aggregated[len(aggregated)-1].Size += curr[0].Size
+		} else {
+			aggregated = append(aggregated, curr[0])
+		}
+	}
+	return aggregated
 }

@@ -26,35 +26,7 @@ func (exchange *Exchange) Connect() {
 	if err != nil {
 		log.Fatal("Failed to connect:", err)
 	}
-	// defer c.Close()
 	exchange.Connection = c
-	// send subscription message
-	// subMsg, _ := json.Marshal(exchange.subMsg)
-	// subMsgStr := []byte(subMsg)
-
-	// if connectionErr := c.WriteMessage(1, subMsgStr); connectionErr != nil {
-	// 	log.Println("Failed to send subcription message: ", connectionErr)
-	// }
-
-	// listening for messages sent from ws server
-	// for {
-	// 	_, message, err := c.ReadMessage()
-	// 	if err != nil {
-	// 		log.Println("Failed to read message:", err)
-	// 	}
-
-	// 	var receivedMsg map[string]interface{}
-
-	// 	if err := json.Unmarshal([]byte(message), &receivedMsg); err != nil {
-	// 		panic(err)
-	// 	}
-	// 	// structure data and send to channel
-	// 	if utilities.ValidateKraken(receivedMsg) {
-	// 		fmt.Println("success")
-	// 	}
-
-	// }
-
 }
 
 func New(exchange string, address string, subMsg map[string]interface{}) *Exchange {

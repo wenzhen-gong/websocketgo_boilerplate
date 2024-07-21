@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/heap"
 	"flag"
 	"fmt"
 	"log"
@@ -26,7 +25,6 @@ func main() {
 
 	<-interrupt
 	log.Println("User interruption")
-	return
 
 }
 
@@ -43,7 +41,7 @@ func Kraken(channelMap map[string]chan entity.OrderBookMsg) {
 	defer e.Connection.Close()
 	e.SendSubMsg()
 	e.ReceiveMsg(kraken.ParseKrakenData, channelMap)
-	return
+
 }
 
 func aggregators(channelMap map[string]chan entity.OrderBookMsg) {
@@ -54,29 +52,33 @@ func aggregators(channelMap map[string]chan entity.OrderBookMsg) {
 				orderBookMsg := <-channel
 				entity.CentralizedOrderBooks[ticker] = map[string]entity.Orderbook{orderBookMsg.Exchange: orderBookMsg.Orderbook}
 
-				// construct slice to be stored and used as heap data structure
-				slice := &entity.PSheap{}
+				// construct bidsSlice and asksSlice to be stored and used as heap data structure
+				bidsSlice := &entity.BidsHeap{Data: [][]entity.PriceSize{}}
+				asksSlice := &entity.AsksHeap{Data: [][]entity.PriceSize{}}
+
 				for _, orderBook := range entity.CentralizedOrderBooks[ticker] {
-					*slice = append(*slice, orderBook.Bids)
+					(*bidsSlice).Data = append((*bidsSlice).Data, orderBook.Bids)
+					(*asksSlice).Data = append((*asksSlice).Data, orderBook.Asks)
+
+					// <--- SHOULD DELETE
+					// Currently there is only Kraken in CentralizedOrderBooks, so Bids and Asks are added twice to make sure entity.Aggregate works properly
+					(*bidsSlice).Data = append((*bidsSlice).Data, orderBook.Bids)
+					(*asksSlice).Data = append((*asksSlice).Data, orderBook.Asks)
+					// --->
+
 				}
 
-				// aggregate
-				heap.Init(slice)
-				aggregatedBids := []entity.PriceSize{}
-				for slice.Len() != 0 {
-					curr := heap.Pop(slice).([]entity.PriceSize)
-					if len(curr) == 0 {
-						continue
-					}
-					heap.Push(slice, curr[1:])
+				// aggregate bids and asks (Feel free to uncomment and print aggregated bids and asks)
+				// aggregatedBids := entity.Aggregate(bidsSlice)
+				// aggregatedAsks := entity.Aggregate(asksSlice)
 
-					if len(aggregatedBids) != 0 && aggregatedBids[len(aggregatedBids)-1].Price == curr[0].Price {
-						aggregatedBids[len(aggregatedBids)-1].Size += curr[0].Size
-					} else {
-						aggregatedBids = append(aggregatedBids, curr[0])
-					}
-				}
-				fmt.Println("Took ", time.Since(orderBookMsg.Orderbook.Ts_original), "to aggregate (using Ts_original for worst scenario consideration)")
+				// fmt.Println("aggregatedBids: ", aggregatedBids)
+				// fmt.Println("aggregatedAsks: ", aggregatedAsks)
+
+				entity.Aggregate(bidsSlice)
+				entity.Aggregate(asksSlice)
+
+				fmt.Println("Took ", time.Since(orderBookMsg.Orderbook.Ts_original), "to aggregate bids and asks (using Ts_original for worst scenario)")
 			}
 		}()
 	}
