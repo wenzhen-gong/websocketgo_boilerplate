@@ -11,6 +11,7 @@ import (
 	"wz/entity"
 	"wz/exchange"
 	"wz/kraken"
+	"wz/util"
 )
 
 func main() {
@@ -53,8 +54,8 @@ func aggregators(channelMap map[string]chan entity.OrderBookMsg) {
 				entity.CentralizedOrderBooks[ticker] = map[string]entity.Orderbook{orderBookMsg.Exchange: orderBookMsg.Orderbook}
 
 				// construct bidsSlice and asksSlice to be stored and used as heap data structure
-				bidsSlice := &entity.BidsHeap{Data: [][]entity.PriceSize{}}
-				asksSlice := &entity.AsksHeap{Data: [][]entity.PriceSize{}}
+				bidsSlice := &util.BidsHeap{Data: [][]entity.PriceSize{}}
+				asksSlice := &util.AsksHeap{Data: [][]entity.PriceSize{}}
 
 				for _, orderBook := range entity.CentralizedOrderBooks[ticker] {
 					(*bidsSlice).Data = append((*bidsSlice).Data, orderBook.Bids)
@@ -75,8 +76,8 @@ func aggregators(channelMap map[string]chan entity.OrderBookMsg) {
 				// fmt.Println("aggregatedBids: ", aggregatedBids)
 				// fmt.Println("aggregatedAsks: ", aggregatedAsks)
 
-				entity.Aggregate(bidsSlice)
-				entity.Aggregate(asksSlice)
+				util.Aggregate(bidsSlice)
+				util.Aggregate(asksSlice)
 
 				fmt.Println("Took ", time.Since(orderBookMsg.Orderbook.Ts_original), "to aggregate bids and asks (using Ts_original for worst scenario)")
 			}

@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 	"wz/entity"
+	"wz/util"
 
 	"github.com/gorilla/websocket"
 )
@@ -73,9 +74,9 @@ func (exchange *Exchange) UpdateOrderBooks(messageType string, ticker string, or
 		// insert update Bids and Asks into orderBooks, trim to maxDepth
 		if exchange.orderBooks[ticker] != nil {
 
-			entity.InsertBids(&exchange.orderBooks[ticker].Bids, orderBook.Bids)
+			util.InsertBids(&exchange.orderBooks[ticker].Bids, orderBook.Bids)
 			exchange.orderBooks[ticker].Bids = exchange.orderBooks[ticker].Bids[:int(math.Min(float64(len(exchange.orderBooks[ticker].Bids)), float64(exchange.maxDepth)))]
-			entity.InsertAsks(&exchange.orderBooks[ticker].Asks, orderBook.Asks)
+			util.InsertAsks(&exchange.orderBooks[ticker].Asks, orderBook.Asks)
 			exchange.orderBooks[ticker].Asks = exchange.orderBooks[ticker].Asks[:int(math.Min(float64(len(exchange.orderBooks[ticker].Asks)), float64(exchange.maxDepth)))]
 
 			// update orderBooks's Ts_original, Ts_received, Ts_updated from update message and current time respectively
